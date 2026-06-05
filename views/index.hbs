@@ -1,0 +1,131 @@
+<h1>Sistema de Librería</h1>
+
+<h2>Agregar / modificar libro</h2>
+
+<form id="formLibro">
+  <input type="hidden" id="id">
+
+  <label>Título:</label><br>
+  <input type="text" id="titulo" required><br><br>
+
+  <label>Autor:</label><br>
+  <input type="text" id="autor" required><br><br>
+
+  <label>Precio:</label><br>
+  <input type="number" id="precio" required><br><br>
+
+  <label>Stock:</label><br>
+  <input type="number" id="stock" required><br><br>
+
+  <button type="submit">Guardar</button>
+  <button type="button" onclick="limpiarFormulario()">Cancelar</button>
+</form>
+
+<p id="mensaje"></p>
+
+<hr>
+
+<h2>Libros cargados</h2>
+
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Título</th>
+      <th>Autor</th>
+      <th>Precio</th>
+      <th>Stock</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody id="tablaLibros"></tbody>
+</table>
+
+<script>
+  const form = document.getElementById('formLibro');
+
+  form.addEventListener('submit', function(evento) {
+    evento.preventDefault();
+
+    const id = document.getElementById('id').value;
+
+    const libro = {
+      titulo: document.getElementById('titulo').value,
+      autor: document.getElementById('autor').value,
+      precio: document.getElementById('precio').value,
+      stock: document.getElementById('stock').value
+    };
+
+    const url = id ? '/libros/' + id : '/libros';
+    const metodo = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: metodo,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(libro)
+    })
+    .then(respuesta => respuesta.json())
+    .then(datos => {
+      document.getElementById('mensaje').innerText = datos.mensaje;
+      limpiarFormulario();
+      cargarLibros();
+    });
+  });
+
+  function cargarLibros() {
+    fetch('/libros')
+      .then(respuesta => respuesta.json())
+      .then(libros => {
+        const tabla = document.getElementById('tablaLibros');
+        tabla.innerHTML = '';
+
+        libros.forEach(libro => {
+          tabla.innerHTML += `
+            <tr>
+              <td>${libro.id}</td>
+              <td>${libro.titulo}</td>
+              <td>${libro.autor}</td>
+              <td>${libro.precio}</td>
+              <td>${libro.stock}</td>
+              <td>
+                <button onclick="editarLibro(${libro.id}, '${libro.titulo}', '${libro.autor}', ${libro.precio}, ${libro.stock})">
+                  Modificar
+                </button>
+                <button onclick="eliminarLibro(${libro.id})">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
+
+  function editarLibro(id, titulo, autor, precio, stock) {
+    document.getElementById('id').value = id;
+    document.getElementById('titulo').value = titulo;
+    document.getElementById('autor').value = autor;
+    document.getElementById('precio').value = precio;
+    document.getElementById('stock').value = stock;
+  }
+
+  function eliminarLibro(id) {
+    fetch('/libros/' + id, {
+      method: 'DELETE'
+    })
+    .then(respuesta => respuesta.json())
+    .then(datos => {
+      document.getElementById('mensaje').innerText = datos.mensaje;
+      cargarLibros();
+    });
+  }
+
+  function limpiarFormulario() {
+    document.getElementById('id').value = '';
+    form.reset();
+  }
+
+  cargarLibros();
+</script>
